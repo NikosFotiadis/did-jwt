@@ -271,6 +271,10 @@ export async function verifyJWT(
         throw new Error(`JWT audience does not match your DID or callback url`)
       }
     }
+    if(header.kid && signer.id !== header.kid){
+      throw new Error(`JWT kid does not match the signer`);
+      
+    }
     return { payload, doc, issuer, signer, jwt }
   }
 }
