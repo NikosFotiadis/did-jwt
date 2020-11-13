@@ -13,7 +13,9 @@ MockDate.set(NOW * 1000 + 123)
 const audAddress = '0x20c769ec9c0996ba7737a4826c2aaff00b1b2040'
 const aud = `did:ethr:${audAddress}`
 const address = '0xf3beac30c498d9e26865f34fcaa57dbb935b0d74'
+const address2 = '0x35910a519348d0581845B928a83cC481A6d8d675'
 const did = `did:ethr:${address}`
+const did2 = `did:ethr:${address2}`
 const alg = 'ES256K'
 
 const privateKey = '278a5de700e29faae8e40e366ec5012b5ec63d36ec77e8a2417154cc1d25383f'
@@ -55,6 +57,35 @@ const didDocDefault = {
     {
       type: 'Secp256k1SignatureAuthentication2018',
       publicKey: `${did}#keys-1`
+    }
+  ]
+}
+
+const didDocMultiplePublicKeys = {
+  '@context': 'https://w3id.org/did/v1',
+  id: did,
+  publicKey: [
+    {
+      id: `${did}#keys-1`,
+      type: 'Secp256k1VerificationKey2018',
+      owner: did,
+      ethereumAddress: address
+    },
+    {
+      id: `${did}#keys-2`,
+      type: 'Secp256k1VerificationKey2018',
+      owner: did,
+      ethereumAddress: address2
+    }
+  ],
+  authentication: [
+    {
+      type: 'Secp256k1SignatureAuthentication2018',
+      publicKey: `${did}#keys-1`
+    },
+    {
+      type: 'Secp256k1SignatureAuthentication2018',
+      publicKey: `${did}#keys-2`
     }
   ]
 }
@@ -160,11 +191,14 @@ describe('createJWT()', () => {
 
 describe('verifyJWT()', () => {
   const resolver = { resolve: jest.fn().mockReturnValue(didDoc) }
+  const resolverMultipleKeysDoc = { resolve: jest.fn().mockReturnValue(didDocMultiplePublicKeys) }
 
   describe('pregenerated JWT', () => {
     // tslint:disable-next-line: max-line-length
     const incomingJwt =
       'eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NksifQ.eyJpYXQiOjE0ODUzMjExMzMsImlzcyI6ImRpZDpldGhyOjB4OTBlNDVkNzViZDEyNDZlMDkyNDg3MjAxODY0N2RiYTk5NmE4ZTdiOSIsInJlcXVlc3RlZCI6WyJuYW1lIiwicGhvbmUiXX0.KIG2zUO8Quf3ucb9jIncZ1CmH0v-fAZlsKvesfsd9x4RzU0qrvinVd9d30DOeZOwdwEdXkET_wuPoOECwU0IKA'
+    const incomingJwtWithKid =
+      'eyJraWQiOiJkaWQ6ZXRocjoweGYzYmVhYzMwYzQ5OGQ5ZTI2ODY1ZjM0ZmNhYTU3ZGJiOTM1YjBkNzQja2V5cy0xIiwidHlwIjoiSldUIiwiYWxnIjoiRVMyNTZLIn0.eyJpYXQiOjE0ODUzMjExMzMsInJlcXVlc3RlZCI6WyJuYW1lIiwicGhvbmUiXSwiaXNzIjoiZGlkOmV0aHI6MHhmM2JlYWMzMGM0OThkOWUyNjg2NWYzNGZjYWE1N2RiYjkzNWIwZDc0In0.ksDGSiGXShzO9tNjjHoNiGWU9P4fCLIX37PES0UR4iCVHh7Jm0qrieDTqe4DiDFBVs9-3FRUzqXAJQucx7APVg'
     it('verifies the JWT and return correct payload', async () => {
       const { payload } = await verifyJWT(incomingJwt, { resolver })
       return expect(payload).toMatchSnapshot()
@@ -185,14 +219,23 @@ describe('verifyJWT()', () => {
       const { signer } = await verifyJWT(incomingJwt, { resolver, auth: true })
       return expect(signer).toEqual(didDoc.publicKey[0])
     })
+    it('verifies the JWT with kid and return correct signer', async () => {
+      const { signer } = await verifyJWT(incomingJwtWithKid, { resolver: resolverMultipleKeysDoc, auth: true })
+      return expect(signer).toEqual(didDocMultiplePublicKeys.publicKey[0])
+    })
   })
 
   describe('badJwt', () => {
     // tslint:disable-next-line: max-line-length
     const badJwt =
       'eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NksifQ.eyJpYXQiOjE0ODUzMjExMzMsImlzcyI6ImRpZDpldGhyOjB4MjBjNzY5ZWM5YzA5OTZiYTc3MzdhNDgyNmMyYWFmZjAwYjFiMjA0MCIsInJlcXVlc3RlZCI6WyJuYW1lIiwicGhvbmUiXX0.TTpuw77fUbd_AY3GJcCumd6F6hxnkskMDJYNpJlI2DQi5MKKudXya9NlyM9e8-KFgTLe-WnXgq9EjWLvjpdiXA'
+    const incomingJwtWrongKid =
+      'eyJraWQiOiJkaWQ6ZXRocjoweGYzYmVhYzMwYzQ5OGQ5ZTI2ODY1ZjM0ZmNhYTU3ZGJiOTM1YjBkNzQja2V5cy0yIiwidHlwIjoiSldUIiwiYWxnIjoiRVMyNTZLIn0.eyJpYXQiOjE0ODUzMjExMzMsInJlcXVlc3RlZCI6WyJuYW1lIiwicGhvbmUiXSwiaXNzIjoiZGlkOmV0aHI6MHhmM2JlYWMzMGM0OThkOWUyNjg2NWYzNGZjYWE1N2RiYjkzNWIwZDc0In0.k7FhsoZOIcH-KWF2t6WC22Nl-kLYKjjT9G-oyAaWl--40VYVAxnGN3ucW9P8jfVEF2gXz2KOMfAoQg6QPy_I6Q'
     it('rejects a JWT with bad signature', async () => {
       await expect(verifyJWT(badJwt, { resolver })).rejects.toThrowError(/Signature invalid for JWT/)
+    })
+    it('rejects a JWT with wrong kid if there a kid in the header', async () => {
+      await expect(verifyJWT(incomingJwtWrongKid, { resolver: resolverMultipleKeysDoc })).rejects.toThrowError(/JWT kid does not match the signer/)
     })
   })
 
