@@ -1,6 +1,6 @@
 {
   "name": "did-jwt",
-  "version": "4.6.3",
+  "version": "4.6.4",
   "description": "Library for Signing and Verifying JWTs compatible uPort and DID standards",
   "main": "lib/index.js",
   "source": "src/index.ts",
@@ -19,7 +19,7 @@
     "test:ci": "jest --coverage && codecov",
     "build:js": "microbundle",
     "build:browser": "webpack --config webpack.config.js",
-    "build": "npm run build:js && npm test && npm run build:browser",
+    "build": "npm run build:js && npm run build:browser",
     "build:docs": "echo 'PLEASE UPDATE REFERENCE DOCS MANUALLY'",
     "format": "prettier --write \"src/**/*.ts\"",
     "lint": "standard && tslint -p tsconfig.json",
