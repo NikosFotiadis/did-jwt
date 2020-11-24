@@ -76,7 +76,7 @@ export interface PublicKeyTypes {
 export const SUPPORTED_PUBLIC_KEY_TYPES: PublicKeyTypes = {
   ES256K: ['Secp256k1VerificationKey2018', 'Secp256k1SignatureVerificationKey2018', 'EcdsaPublicKeySecp256k1'],
   'ES256K-R': ['Secp256k1VerificationKey2018', 'Secp256k1SignatureVerificationKey2018', 'EcdsaPublicKeySecp256k1'],
-  Ed25519: ['ED25519SignatureVerification']
+  Ed25519: ['ED25519SignatureVerification', 'Ed25519VerificationKey2018']
 }
 
 const defaultAlg = 'ES256K'
